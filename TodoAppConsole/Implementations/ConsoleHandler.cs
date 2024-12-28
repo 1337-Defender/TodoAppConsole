@@ -9,19 +9,56 @@ namespace TodoAppConsole.Implementations
 {
     public class ConsoleHandler
     {
-        private string _currentState;
+        private enum AppState
+        {
+            MainMenu,
+            HelpMenu,
+            ManageTodos,
+            ImportTodos,
+            ExportTodos,
+            EmailTodos,
+            Quit
+        }
+
+        private AppState _currentState;
         private bool _running = true;
+
         public ConsoleHandler()
         {
-            _currentState = "mainMenu";
+            _currentState = AppState.MainMenu;
         }
 
         public void mainLoop()
         {
             while (_running)
             {
-                mainMenu();
-                AnsiConsole.Clear();
+                switch(_currentState)
+                {
+                case AppState.MainMenu:
+                        mainMenu();
+                        break;
+                    case AppState.HelpMenu:
+                        displayHelp();
+                        break;
+                    case AppState.ManageTodos:
+                        navigateToTasks();
+                        break;
+                    case AppState.ImportTodos:
+                        // Placeholder for ImportTodos logic
+                        break;
+                    case AppState.ExportTodos:
+                        // Placeholder for ExportTodos logic
+                        break;
+                    case AppState.EmailTodos:
+                        // Placeholder for EmailTodos logic
+                        break;
+                    case AppState.Quit:
+                        _running = false;
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                    }
+                    AnsiConsole.Clear();
             }
         }
 
@@ -111,14 +148,10 @@ namespace TodoAppConsole.Implementations
                 case 2:
                     break;
                 case 6:
-                    _running = false;
+                    _currentState = AppState.Quit;
                     break;
                 default:
                     break;
-            }
-            if (option == 6)
-            {
-                _running = false;
             }
             return;
             
