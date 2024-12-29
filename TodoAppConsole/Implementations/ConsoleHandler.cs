@@ -28,12 +28,16 @@ namespace TodoAppConsole.Implementations
         private Layout _layout;
         private int _currentOption;
         public TaskManager TaskManager { get; private set; }
+        public FileSaver FileSaver { get; private set; }
 
         public ConsoleHandler()
         {
             Console.OutputEncoding = System.Text.Encoding.UTF8;
             _currentState = AppState.MainMenu;
             _currentOption = 0;
+
+            FileSaver = new FileSaver();
+
             TaskManager = new TaskManager();
             TaskManager.addTask(
                 "First task",
@@ -223,6 +227,7 @@ namespace TodoAppConsole.Implementations
             controlsTable.AddRow("Exit", "[bold gray]Esc[/]");
 
             controlsTable.Columns[1].Centered();
+            controlsTable.Expand().Centered();
 
             return new Panel(controlsTable)
                 .Expand()
@@ -367,6 +372,9 @@ namespace TodoAppConsole.Implementations
                 case ConsoleKey.E:
                     editTaskForm();
                     break;
+                case ConsoleKey.R:
+                    removeTaskForm();
+                    break;
             }
             UpdateTodosPanel();
             UpdateTodoInfoPanel();
@@ -422,6 +430,8 @@ namespace TodoAppConsole.Implementations
             );
 
             TaskManager.addTask(title, description, dueDate, new Category(category), priority);
+            FileSaver.saveToFile(TaskManager.tasks);
+
             AnsiConsole.Write("[bold green]Task added successfully![/]");
             Console.CursorVisible = false;
         }
@@ -505,6 +515,25 @@ namespace TodoAppConsole.Implementations
             task.category.name = category;
             
             AnsiConsole.Write("[bold green]Task edited successfully![/]");
+            Console.CursorVisible = false;
+        }
+
+        public void removeTaskForm()
+        {
+            AnsiConsole.Clear();
+            Console.CursorVisible = true;
+
+            var confirmationPrompt = new ConfirmationPrompt("[red]Remove Task?[/]");
+            confirmationPrompt.DefaultValue = false;
+            var confirmation = AnsiConsole.Prompt(
+                confirmationPrompt
+            );
+
+            if (!confirmation)
+                return;
+
+            TaskManager.tasks.Remove(TaskManager.tasks[_currentOption]);
+            AnsiConsole.Write("[bold green]Task removed successfully![/]");
             Console.CursorVisible = false;
         }
 
