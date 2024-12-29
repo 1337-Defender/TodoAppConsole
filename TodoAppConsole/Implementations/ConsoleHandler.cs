@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection.Metadata;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.VisualBasic;
 using Spectre.Console;
 using Spectre.Console.Rendering;
 
@@ -338,86 +339,6 @@ namespace TodoAppConsole.Implementations
             AnsiConsole.Clear();
         }
 
-        /// <summary>
-        /// @return
-        /// </summary>
-        //public void showTasks()
-        //{
-        //    Console.CursorVisible = false;
-        //    var layout = new Layout("Root")
-        //    .SplitRows(
-        //        new Layout("Todos"),
-        //        new Layout("InfoPanel")
-        //        .SplitColumns(
-        //            new Layout("TodoInfo"),
-        //            new Layout("Controls")
-        //        )
-        //    );
-
-        //    layout["TodoInfo"].Ratio(2);
-        //    layout["Controls"].Ratio(1);
-
-        //    layout["Todos"].Update(
-        //        new Panel(
-        //            Align.Center(
-        //                new Markup("My [blue]Todos![/]"),
-        //                VerticalAlignment.Middle))
-        //            .Expand()
-        //    );
-        //    layout["TodoInfo"].Update(
-        //        new Panel(
-        //            Align.Center(
-        //                new Markup("Todo [red]Info![/]"),
-        //                VerticalAlignment.Middle))
-        //            .Expand()
-        //    );
-
-        //    var controlsTable = new Table();
-
-        //    controlsTable.HideHeaders();
-        //    controlsTable.HideFooters();
-        //    //controlsTable.Border(TableBorder.None);
-
-        //    controlsTable.AddColumn("Action");
-        //    controlsTable.AddColumn("Key");
-
-        //    controlsTable.AddRow("Mark task complete/incomplete", "[bold gray]Enter[/]");
-        //    string vArrows = "↑ ↓";
-        //    string hArrows = "← →";
-        //    controlsTable.AddRow("Navigate todos", "[bold gray]Up/Down[/]");
-        //    controlsTable.AddRow("Navigate pages", "[bold gray]Left/Right[/]");
-        //    //controlsTable.AddRow("Navigate todos", new Markup("[bold gray]{0}[/]", vArrows));
-        //    //controlsTable.AddRow("Navigate pages", new Markup("[bold gray]{0}[/]", hArrows));
-        //    //controlsTable.AddRow("Navigate todos", "[bold gray]{0}[/]", Markup.Escape("↑ ↓"));
-        //    //controlsTable.AddRow("Navigate pages", "[bold gray]{0}[/]", Markup.Escape("← →"));
-        //    //controlsTable.AddRow("Navigate todos", "[bold gray]{\u2191 \u2193}[/]");
-        //    //controlsTable.AddRow("Navigate pages", "[bold gray]{\u2190 \u2192}[/]");
-        //    controlsTable.AddRow("Add todos", "[bold gray]a[/]");
-        //    controlsTable.AddRow("Edit todos", "[bold gray]e[/]");
-
-        //    controlsTable.Columns[1].Centered();
-
-        //    var controlsPanel = new Panel(controlsTable.Centered().Expand());
-        //    controlsPanel.Header = new PanelHeader("[bold yellow]Controls[/]");
-        //    controlsPanel.Border = BoxBorder.Double;
-
-        //    layout["Controls"].Update(
-        //        controlsPanel.Expand()
-        //    //new Panel(
-        //    //    Align.Center(
-        //    //        new Markup("Contr[yellow]ols![/]"),
-        //    //        VerticalAlignment.Middle))
-        //    //    .Expand()
-        //    );
-
-        //    AnsiConsole.Write(layout);
-
-        //    ConsoleKeyInfo key = Console.ReadKey(true);
-
-        //    AnsiConsole.Clear();
-        //    return;
-        //}
-
         private void processTaskInput()
         {
             var key = Console.ReadKey(true).Key;
@@ -439,9 +360,71 @@ namespace TodoAppConsole.Implementations
                 case ConsoleKey.Enter:
                     TaskManager.tasks[_currentOption].isCompleted = !TaskManager.tasks[_currentOption].isCompleted;
                     break;
+                case ConsoleKey.A:
+                    //_currentState = AppState.AddTodos;
+                    addTaskForm();
+                    break;
             }
             UpdateTodosPanel();
             UpdateTodoInfoPanel();
+        }
+
+        public void addTaskForm()
+        {
+            AnsiConsole.Clear();
+            Console.CursorVisible = true;
+
+            var confirmation = AnsiConsole.Prompt(
+            new TextPrompt<bool>("Add task?")
+                .AddChoice(true)
+                .AddChoice(false)
+                .DefaultValue(true)
+                .WithConverter(choice => choice ? "y" : "n"));
+
+            if (confirmation.Equals("Confirmed"))
+                return;
+
+            AnsiConsole.Write(new Rule("[yellow]Title[/]"));
+            string title = AnsiConsole.Prompt(
+                new TextPrompt<string>("Enter Todo [green]Title[/]: ")
+            );
+
+            AnsiConsole.Write(new Rule("[yellow]Description[/]"));
+            string description = AnsiConsole.Prompt(
+                new TextPrompt<string>("Enter Todo [green]Description[/]: ")
+            );
+
+            AnsiConsole.Write(new Rule("[yellow]Description[/]"));
+            string category = AnsiConsole.Prompt(
+                new TextPrompt<string>("Enter Todo [green]Category[/]: ")
+            );
+
+            AnsiConsole.Write(new Rule("[yellow]Due Date[/]"));
+            var currDate = DateTime.Today;
+            int year = AnsiConsole.Prompt(
+                new TextPrompt<int>("Enter [green]Year[/]: ")
+                .DefaultValue(currDate.Year)
+            );
+            int month = AnsiConsole.Prompt(
+                new TextPrompt<int>("Enter [green]Month[/]: ")
+                .DefaultValue(currDate.Month)
+            );
+            int day = AnsiConsole.Prompt(
+                new TextPrompt<int>("Enter [green]Day[/]: ")
+                .DefaultValue(currDate.Day)
+            );
+            var dueDate = new DateTime(year, month, day);
+
+            AnsiConsole.Write(new Rule("[yellow]Description[/]"));
+            string priority = AnsiConsole.Prompt(
+                new TextPrompt<string>("Enter Todo [green]Description[/]: ")
+                .AddChoices(["Low", "Medium", "High"])
+                .DefaultValue("Low")
+            );
+
+            TaskManager.addTask(title, description, dueDate, new Category(category), priority);
+            AnsiConsole.Write("[bold green]Task added successfully![/]");
+            Console.CursorVisible = false;
         }
 
         /// <summary>
