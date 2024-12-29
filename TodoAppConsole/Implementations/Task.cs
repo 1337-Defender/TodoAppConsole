@@ -10,6 +10,7 @@ namespace TodoAppConsole.Implementations
     {
         public Task()
         {
+            isCompleted = false;
         }
 
         public int id;
@@ -35,8 +36,10 @@ namespace TodoAppConsole.Implementations
         /// <summary>
         /// @return
         /// </summary>
+
         public void markAsCompleted()
         {
+            isCompleted = true;
             // TODO implement here
             return;
         }
