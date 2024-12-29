@@ -10,6 +10,7 @@ namespace TodoAppConsole.Implementations
     {
         public TaskManager()
         {
+            tasks = new List<Task>();
         }
 
         public List<Task> tasks;
@@ -25,8 +26,14 @@ namespace TodoAppConsole.Implementations
         /// @return
         /// </summary>
         public void addTask(string title, string description, DateTime dueDate, Category category, string priority)
-        {
-            // TODO implement here
+        {  
+            var task = new Task();
+            task.title = title;
+            task.description = description;
+            task.dueDate = dueDate;
+            task.category = category;
+            task.priority = priority;
+            tasks.Add(task);
             return;
         }
 

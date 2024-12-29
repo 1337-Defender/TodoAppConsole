@@ -8,8 +8,9 @@ namespace TodoAppConsole.Implementations
 {
     public class Category
     {
-        public Category()
+        public Category(string name)
         {
+            this.name = name;
         }
 
         public int id;
