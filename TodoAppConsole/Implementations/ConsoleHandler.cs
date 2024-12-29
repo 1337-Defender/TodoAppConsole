@@ -219,6 +219,7 @@ namespace TodoAppConsole.Implementations
             controlsTable.AddRow("Mark task complete/incomplete", "[bold gray]Enter[/]");
             controlsTable.AddRow("Add todos", "[bold gray]a[/]");
             controlsTable.AddRow("Edit todos", "[bold gray]e[/]");
+            controlsTable.AddRow("Remove todos", "[bold gray]r[/]");
             controlsTable.AddRow("Exit", "[bold gray]Esc[/]");
 
             controlsTable.Columns[1].Centered();
@@ -361,8 +362,10 @@ namespace TodoAppConsole.Implementations
                     TaskManager.tasks[_currentOption].isCompleted = !TaskManager.tasks[_currentOption].isCompleted;
                     break;
                 case ConsoleKey.A:
-                    //_currentState = AppState.AddTodos;
                     addTaskForm();
+                    break;
+                case ConsoleKey.E:
+                    editTaskForm();
                     break;
             }
             UpdateTodosPanel();
@@ -375,13 +378,9 @@ namespace TodoAppConsole.Implementations
             Console.CursorVisible = true;
 
             var confirmation = AnsiConsole.Prompt(
-            new TextPrompt<bool>("Add task?")
-                .AddChoice(true)
-                .AddChoice(false)
-                .DefaultValue(true)
-                .WithConverter(choice => choice ? "y" : "n"));
+                new ConfirmationPrompt("Add Task?"));
 
-            if (confirmation.Equals("Confirmed"))
+            if (!confirmation)
                 return;
 
             AnsiConsole.Write(new Rule("[yellow]Title[/]"));
@@ -415,15 +414,97 @@ namespace TodoAppConsole.Implementations
             );
             var dueDate = new DateTime(year, month, day);
 
-            AnsiConsole.Write(new Rule("[yellow]Description[/]"));
+            AnsiConsole.Write(new Rule("[yellow]Priority[/]"));
             string priority = AnsiConsole.Prompt(
-                new TextPrompt<string>("Enter Todo [green]Description[/]: ")
+                new TextPrompt<string>("Enter Todo [green]Priority[/]: ")
                 .AddChoices(["Low", "Medium", "High"])
                 .DefaultValue("Low")
             );
 
             TaskManager.addTask(title, description, dueDate, new Category(category), priority);
             AnsiConsole.Write("[bold green]Task added successfully![/]");
+            Console.CursorVisible = false;
+        }
+
+        public void editTaskForm()
+        {
+            AnsiConsole.Clear();
+            Console.CursorVisible = true;
+
+            var confirmation = AnsiConsole.Prompt(
+                new ConfirmationPrompt("Edit Task?"));
+
+            if (!confirmation)
+                return;
+
+            var task = TaskManager.tasks[_currentOption];
+
+            AnsiConsole.Write(new Rule("[yellow]Title[/]"));
+            AnsiConsole.Write(new Markup($"[aqua]Current Title: [/][dim]{task.title}[/]\n"));
+            string title = AnsiConsole.Prompt(
+                new TextPrompt<string>("Enter new Todo [green]Title[/] [dim](Leave blank to keep unchanged)[/]: ")
+                .AllowEmpty()
+            );
+            if (string.IsNullOrEmpty(title))
+                title = task.title;
+
+            AnsiConsole.Write(new Rule("[yellow]Description[/]"));
+            AnsiConsole.Write(new Markup($"[aqua]Current Description: [/][dim]{task.description}[/]\n"));
+            string description = AnsiConsole.Prompt(
+                new TextPrompt<string>("Enter Todo [green]Description[/] [dim](Leave blank to keep unchanged)[/]: ")
+                .AllowEmpty()
+            );
+            if (string.IsNullOrEmpty(description))
+                description = task.description;
+
+            AnsiConsole.Write(new Rule("[yellow]Category[/]"));
+            AnsiConsole.Write(new Markup($"[aqua]Current Category: [/][dim]{task.category.name}[/]\n"));
+            string category = AnsiConsole.Prompt(
+                new TextPrompt<string>("Enter Todo [green]Category[/] [dim](Leave blank to keep unchanged)[/]: ")
+                .AllowEmpty()
+            );
+            if (string.IsNullOrEmpty(category))
+                category = task.category.name;
+
+            AnsiConsole.Write(new Rule("[yellow]Due Date[/]"));
+            var editDateConfirmation = AnsiConsole.Prompt(
+                new ConfirmationPrompt("Edit Due Date?"));
+
+            DateTime dueDate;
+            if (editDateConfirmation)
+            {
+                int year = AnsiConsole.Prompt(
+                    new TextPrompt<int>("Enter [green]Year[/]: ")
+                    .DefaultValue(task.dueDate.Year)
+                );
+                int month = AnsiConsole.Prompt(
+                    new TextPrompt<int>("Enter [green]Month[/]: ")
+                    .DefaultValue(task.dueDate.Month)
+                );
+                int day = AnsiConsole.Prompt(
+                    new TextPrompt<int>("Enter [green]Day[/]: ")
+                    .DefaultValue(task.dueDate.Day)
+                );
+                dueDate = new DateTime(year, month, day);
+            }
+            else
+                dueDate = task.dueDate;
+
+            AnsiConsole.Write(new Rule("[yellow]Priority[/]"));
+            AnsiConsole.Write(new Markup($"[aqua]Current Priority: [/][dim]{task.priority}[/]\n"));
+            string priority = AnsiConsole.Prompt(
+                new TextPrompt<string>("Enter Todo [green]Priority[/]: ")
+                .AddChoices(["Low", "Medium", "High"])
+                .DefaultValue(task.priority)
+            );
+
+            task.title = title;
+            task.description = description;
+            task.priority = priority;
+            task.dueDate = dueDate;
+            task.category.name = category;
+            
+            AnsiConsole.Write("[bold green]Task edited successfully![/]");
             Console.CursorVisible = false;
         }
 
