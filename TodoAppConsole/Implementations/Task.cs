@@ -15,21 +15,21 @@ namespace TodoAppConsole.Implementations
 
         public int id;
 
-        public string title;
+        public string title { get; set; }
 
-        public string description;
+        public string description { get; set; }
 
-        public DateTime dueDate;
+        public DateTime dueDate { get; set; }
 
         public DateTime completionTimeStamp;
 
-        public string priority;
+        public string priority { get; set; }
 
-        public bool isCompleted;
+        public bool isCompleted { get; set; }
 
         public bool isPinned;
 
-        public Category category;
+        public Category category { get; set; }
 
         public string taskGroup;
 

@@ -15,7 +15,7 @@ namespace TodoAppConsole.Implementations
 
         public int id;
 
-        public string name;
+        public string name { get; set; }
 
         public string color;
     }
