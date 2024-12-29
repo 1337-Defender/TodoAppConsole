@@ -22,6 +22,7 @@ namespace TodoAppConsole.Implementations
 
         private AppState _currentState;
         private bool _running = true;
+        private Layout _layout;
 
         public ConsoleHandler()
         {
@@ -41,7 +42,7 @@ namespace TodoAppConsole.Implementations
                         displayHelp();
                         break;
                     case AppState.ManageTodos:
-                        navigateToTasks();
+                        showTasks();
                         break;
                     case AppState.ImportTodos:
                         // Placeholder for ImportTodos logic
@@ -57,49 +58,49 @@ namespace TodoAppConsole.Implementations
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();
-                    }
-                    AnsiConsole.Clear();
+                }
+                //AnsiConsole.Clear();
             }
         }
 
-        //private int getUserChoice(int cursorLeft, int cursorTop, Dictionary<string, string> inputs)
-        //{
-        //    bool selected = false;
-        //    int option = 1;
-        //    int numOptions = inputs.Count;
-        //    Console.CursorVisible = false;
+        private int getUserTodoChoice(int cursorLeft, int cursorTop, Dictionary<string, string> inputs)
+        {
+            bool selected = false;
+            int option = 1;
+            int numOptions = inputs.Count;
+            Console.CursorVisible = false;
 
-        //    while (!selected)
-        //    {
-        //        Console.SetCursorPosition(cursorLeft, cursorTop);
+            while (!selected)
+            {
+                Console.SetCursorPosition(cursorLeft, cursorTop);
 
-        //        int index = 1;
-        //        foreach (KeyValuePair<string, string> pair in inputs)
-        //        {
-        //            Console.WriteLine($"{(index == option ? "\u001b[32m" : "")}{index}. {pair.Value} - {pair.Key}\u001B[0m");
-        //            index++;
-        //        }
+                int index = 1;
+                foreach (KeyValuePair<string, string> pair in inputs)
+                {
+                    Console.WriteLine($"{(index == option ? "\u001b[32m" : "")}{index}. {pair.Value} - {pair.Key}\u001B[0m");
+                    index++;
+                }
 
-        //        ConsoleKeyInfo key = Console.ReadKey(true);
+                ConsoleKeyInfo key = Console.ReadKey(true);
 
-        //        if (key.Key == ConsoleKey.UpArrow)
-        //        {
-        //            option = option == 1 ? numOptions : option - 1;
-        //        }
-        //        else if (key.Key == ConsoleKey.DownArrow)
-        //        {
-        //            option = option == numOptions ? 1 : option + 1;
-        //        }
-        //        else if (key.Key == ConsoleKey.Enter)
-        //        {
-        //            selected = true;
-        //            break;
-        //        }
-        //    }
+                if (key.Key == ConsoleKey.UpArrow)
+                {
+                    option = option == 1 ? numOptions : option - 1;
+                }
+                else if (key.Key == ConsoleKey.DownArrow)
+                {
+                    option = option == numOptions ? 1 : option + 1;
+                }
+                else if (key.Key == ConsoleKey.Enter)
+                {
+                    selected = true;
+                    break;
+                }
+            }
 
-        //    Console.CursorVisible = true;
-        //    return option - 1;
-        //}
+            Console.CursorVisible = true;
+            return option - 1;
+        }
 
         /// <summary>
         /// @return
@@ -146,6 +147,7 @@ namespace TodoAppConsole.Implementations
             switch (option)
             {
                 case 2:
+                    _currentState = AppState.ManageTodos;
                     break;
                 case 6:
                     _currentState = AppState.Quit;
@@ -153,17 +155,191 @@ namespace TodoAppConsole.Implementations
                 default:
                     break;
             }
+
+            AnsiConsole.Clear();
             return;
             
+        }
+
+        private void InitializeLayout()
+        {
+            _layout = new Layout("Root")
+                .SplitRows(
+                    new Layout("Todos"),
+                    new Layout("InfoPanel")
+                        .SplitColumns(
+                            new Layout("TodoInfo"),
+                            new Layout("Controls")
+                        )
+                );
+
+            _layout["Controls"].Update(BuildControlsPanel());
+            // Set initial content
+            UpdateTodosPanel("My [blue]Todos![/]");
+            UpdateTodoInfoPanel("Select a task to view [red]details![/]");
+        }
+
+        private Panel BuildControlsPanel()
+        {
+            var controlsTable = new Table();
+            controlsTable.AddColumn("Action");
+            controlsTable.AddColumn("Key");
+
+            controlsTable.AddRow("Navigate todos", "[bold gray]Up/Down[/]");
+            controlsTable.AddRow("Navigate pages", "[bold gray]Left/Right[/]");
+            controlsTable.AddRow("Mark task complete/incomplete", "[bold gray]Enter[/]");
+            controlsTable.AddRow("Add todos", "[bold gray]a[/]");
+            controlsTable.AddRow("Edit todos", "[bold gray]e[/]");
+            controlsTable.AddRow("Exit", "[bold gray]Esc[/]");
+
+            controlsTable.Columns[1].Centered();
+
+            return new Panel(controlsTable)
+                .Expand()
+                .Header("[bold yellow]Controls[/]")
+                .Border(BoxBorder.Double);
+        }
+
+        private void UpdateTodosPanel(string content)
+        {
+            _layout["Todos"].Update(
+                new Panel(
+                    Align.Center(
+                        new Markup(content),
+                        VerticalAlignment.Middle))
+                    .Expand().Border(BoxBorder.Double)
+            );
+        }
+
+        private void UpdateTodoInfoPanel(string content)
+        {
+            _layout["TodoInfo"].Update(
+                new Panel(
+                    Align.Center(
+                        new Markup(content),
+                        VerticalAlignment.Middle))
+                    .Expand()
+            );
+        }
+
+        public void showTasks()
+        {
+            Console.CursorVisible = false;
+
+            // Initialize layout once
+            if (_layout == null)
+            {
+                InitializeLayout();
+            }
+
+            
+
+            // Render layout
+            AnsiConsole.Clear();
+            AnsiConsole.Write(_layout);
+
+            // Process user input
+            var key = Console.ReadKey(true).Key;
+            switch (key)
+                {
+                    case ConsoleKey.UpArrow:
+                        UpdateTodoInfoPanel("[green]Task 1 details![/]"); // Example dynamic update
+                        break;
+                    case ConsoleKey.DownArrow:
+                        UpdateTodoInfoPanel("[yellow]Task 2 details![/]"); // Example dynamic update
+                        break;
+                    case ConsoleKey.Escape:
+                    _currentState = AppState.MainMenu;
+                        break;
+                }
+
+            Console.CursorVisible = true;
+            AnsiConsole.Clear();
         }
 
         /// <summary>
         /// @return
         /// </summary>
-        public void navigateToTasks()
+        //public void showTasks()
+        //{
+        //    Console.CursorVisible = false;
+        //    var layout = new Layout("Root")
+        //    .SplitRows(
+        //        new Layout("Todos"),
+        //        new Layout("InfoPanel")
+        //        .SplitColumns(
+        //            new Layout("TodoInfo"),
+        //            new Layout("Controls")
+        //        )
+        //    );
+
+        //    layout["TodoInfo"].Ratio(2);
+        //    layout["Controls"].Ratio(1);
+
+        //    layout["Todos"].Update(
+        //        new Panel(
+        //            Align.Center(
+        //                new Markup("My [blue]Todos![/]"),
+        //                VerticalAlignment.Middle))
+        //            .Expand()
+        //    );
+        //    layout["TodoInfo"].Update(
+        //        new Panel(
+        //            Align.Center(
+        //                new Markup("Todo [red]Info![/]"),
+        //                VerticalAlignment.Middle))
+        //            .Expand()
+        //    );
+
+        //    var controlsTable = new Table();
+
+        //    controlsTable.HideHeaders();
+        //    controlsTable.HideFooters();
+        //    //controlsTable.Border(TableBorder.None);
+
+        //    controlsTable.AddColumn("Action");
+        //    controlsTable.AddColumn("Key");
+
+        //    controlsTable.AddRow("Mark task complete/incomplete", "[bold gray]Enter[/]");
+        //    string vArrows = "↑ ↓";
+        //    string hArrows = "← →";
+        //    controlsTable.AddRow("Navigate todos", "[bold gray]Up/Down[/]");
+        //    controlsTable.AddRow("Navigate pages", "[bold gray]Left/Right[/]");
+        //    //controlsTable.AddRow("Navigate todos", new Markup("[bold gray]{0}[/]", vArrows));
+        //    //controlsTable.AddRow("Navigate pages", new Markup("[bold gray]{0}[/]", hArrows));
+        //    //controlsTable.AddRow("Navigate todos", "[bold gray]{0}[/]", Markup.Escape("↑ ↓"));
+        //    //controlsTable.AddRow("Navigate pages", "[bold gray]{0}[/]", Markup.Escape("← →"));
+        //    //controlsTable.AddRow("Navigate todos", "[bold gray]{\u2191 \u2193}[/]");
+        //    //controlsTable.AddRow("Navigate pages", "[bold gray]{\u2190 \u2192}[/]");
+        //    controlsTable.AddRow("Add todos", "[bold gray]a[/]");
+        //    controlsTable.AddRow("Edit todos", "[bold gray]e[/]");
+
+        //    controlsTable.Columns[1].Centered();
+
+        //    var controlsPanel = new Panel(controlsTable.Centered().Expand());
+        //    controlsPanel.Header = new PanelHeader("[bold yellow]Controls[/]");
+        //    controlsPanel.Border = BoxBorder.Double;
+
+        //    layout["Controls"].Update(
+        //        controlsPanel.Expand()
+        //    //new Panel(
+        //    //    Align.Center(
+        //    //        new Markup("Contr[yellow]ols![/]"),
+        //    //        VerticalAlignment.Middle))
+        //    //    .Expand()
+        //    );
+
+        //    AnsiConsole.Write(layout);
+
+        //    ConsoleKeyInfo key = Console.ReadKey(true);
+
+        //    AnsiConsole.Clear();
+        //    return;
+        //}
+
+        private void initShowTasks()
         {
-            // TODO implement here
-            return;
+
         }
 
         /// <summary>
