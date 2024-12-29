@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Spectre.Console;
+using Spectre.Console.Rendering;
 
 namespace TodoAppConsole.Implementations
 {
@@ -23,10 +24,35 @@ namespace TodoAppConsole.Implementations
         private AppState _currentState;
         private bool _running = true;
         private Layout _layout;
+        private int _currentOption;
+        public TaskManager TaskManager { get; private set; }
 
         public ConsoleHandler()
         {
             _currentState = AppState.MainMenu;
+            _currentOption = 0;
+            TaskManager = new TaskManager();
+            TaskManager.addTask(
+                "First task", 
+                "This is task 1 ka description", 
+                new DateTime(2024, 12, 25),
+                new Category("Category 1"), 
+                "High"
+            );
+            TaskManager.addTask(
+                "Second taskkkkkkkkkkkkkk",
+                "This is task 2",
+                new DateTime(2024, 11, 02),
+                new Category("Category 1"),
+                "Low"
+            );
+            TaskManager.addTask(
+                "Third task",
+                "Task 3 says hi!",
+                new DateTime(2024, 06, 30),
+                new Category("Category 2"),
+                "Medium"
+            );
         }
 
         public void mainLoop()
@@ -175,7 +201,7 @@ namespace TodoAppConsole.Implementations
 
             _layout["Controls"].Update(BuildControlsPanel());
             // Set initial content
-            UpdateTodosPanel("My [blue]Todos![/]");
+            UpdateTodosPanel();
             UpdateTodoInfoPanel("Select a task to view [red]details![/]");
         }
 
@@ -200,14 +226,51 @@ namespace TodoAppConsole.Implementations
                 .Border(BoxBorder.Double);
         }
 
-        private void UpdateTodosPanel(string content)
+        private void UpdateTodosPanel()
         {
+            var todosTable = new Table();
+
+            todosTable.AddColumns(["ID", "TITLE", "CATEGORY", "DUE DATE", "PRIORITY", "COMPLETED"]);
+            foreach (var c in todosTable.Columns)
+            {
+                c.NoWrap();
+            }
+            todosTable.Columns[0].Width = 1;
+            todosTable.Columns[5].Width = 6;
+
+            int _ = 0;
+            foreach (var task in TaskManager.tasks)
+            {
+                if (_currentOption == _)
+                {
+                    todosTable.AddRow(
+                        new Markup($"[invert]{task.id}[/]"),
+                        new Markup($"[invert]{task.title}[/]"),
+                        new Markup($"[invert]{task.category.name}[/]"),
+                        new Markup($"[invert]{task.dueDate.ToShortDateString()}[/]"),
+                        new Markup($"[invert]{task.priority}[/]"),
+                        new Markup($"[invert]{task.isCompleted}[/]")
+                    );
+                }
+                else
+                {
+                    todosTable.AddRow(
+                        task.id.ToString(),
+                        task.title,
+                        task.category.name,
+                        task.dueDate.ToShortDateString(),
+                        task.priority,
+                        task.isCompleted.ToString());
+                }
+                _++;
+            }
+
             _layout["Todos"].Update(
                 new Panel(
                     Align.Center(
-                        new Markup(content),
-                        VerticalAlignment.Middle))
-                    .Expand().Border(BoxBorder.Double)
+                        todosTable.Expand(),
+                        VerticalAlignment.Top))
+                    .Expand().Header(new PanelHeader("My [bold blue]Todos[/]"))
             );
         }
 
@@ -218,7 +281,7 @@ namespace TodoAppConsole.Implementations
                     Align.Center(
                         new Markup(content),
                         VerticalAlignment.Middle))
-                    .Expand()
+                    .Expand().Border(BoxBorder.Double).Header(new PanelHeader("[bold green]Todos[/] Info"))
             );
         }
 
@@ -239,21 +302,9 @@ namespace TodoAppConsole.Implementations
             AnsiConsole.Write(_layout);
 
             // Process user input
-            var key = Console.ReadKey(true).Key;
-            switch (key)
-                {
-                    case ConsoleKey.UpArrow:
-                        UpdateTodoInfoPanel("[green]Task 1 details![/]"); // Example dynamic update
-                        break;
-                    case ConsoleKey.DownArrow:
-                        UpdateTodoInfoPanel("[yellow]Task 2 details![/]"); // Example dynamic update
-                        break;
-                    case ConsoleKey.Escape:
-                    _currentState = AppState.MainMenu;
-                        break;
-                }
+            processTaskInput();
 
-            Console.CursorVisible = true;
+            Console.CursorVisible = false;
             AnsiConsole.Clear();
         }
 
@@ -337,9 +388,29 @@ namespace TodoAppConsole.Implementations
         //    return;
         //}
 
-        private void initShowTasks()
+        private void processTaskInput()
         {
-
+            var key = Console.ReadKey(true).Key;
+            switch (key)
+            {
+                case ConsoleKey.UpArrow:
+                    _currentOption--;
+                    if (_currentOption < 0)
+                        _currentOption = 0;
+                    UpdateTodosPanel();
+                    UpdateTodoInfoPanel($"[bold green]Description[/]\n{TaskManager.tasks[_currentOption].description}"); // Example dynamic update
+                    break;
+                case ConsoleKey.DownArrow:
+                    _currentOption++;
+                    if (_currentOption > TaskManager.tasks.Count - 1)
+                        _currentOption = TaskManager.tasks.Count - 1;
+                    UpdateTodosPanel();
+                    UpdateTodoInfoPanel($"[bold green]Description[/]\n{TaskManager.tasks[_currentOption].description}");
+                    break;
+                case ConsoleKey.Escape:
+                    _currentState = AppState.MainMenu;
+                    break;
+            }
         }
 
         /// <summary>
