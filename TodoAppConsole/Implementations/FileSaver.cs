@@ -74,5 +74,49 @@ namespace TodoAppConsole.Implementations
             var json = File.ReadAllText(CategoriesFilePath);
             return JsonSerializer.Deserialize<CategoriesSaveData>(json) ?? data;
         }
+
+        public bool ExportSaveData(List<Task> tasks, string filePath, string fileName)
+        {
+            if (tasks == null || tasks.Count == 0)
+            {
+                return false;
+            }
+
+            try
+            {
+                // Construct the full path for the file
+                string fullPath = Path.Combine(filePath, $"{fileName}.txt");
+
+                // Ensure the directory exists
+                if (!Directory.Exists(filePath))
+                {
+                    Directory.CreateDirectory(filePath);
+                }
+
+                // Write to the full path
+                using (StreamWriter writer = new StreamWriter(fullPath))
+                {
+                    writer.WriteLine("Task Export");
+                    writer.WriteLine("============");
+                    foreach (var task in tasks)
+                    {
+                        writer.WriteLine($"ID: {task.id}");
+                        writer.WriteLine($"Title: {task.title}");
+                        writer.WriteLine($"Description: {task.description}");
+                        writer.WriteLine($"Due Date: {task.dueDate:yyyy-MM-dd HH:mm}");
+                        writer.WriteLine($"Priority: {task.priority}");
+                        writer.WriteLine($"Completed: {task.isCompleted}");
+                        writer.WriteLine($"Category: {task.category?.name ?? "None"}");
+                        writer.WriteLine(new string('-', 40)); // Separator
+                    }
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+        }
     }
 }

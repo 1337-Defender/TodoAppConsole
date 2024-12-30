@@ -17,7 +17,6 @@ namespace TodoAppConsole.Implementations
             MainMenu,
             HelpMenu,
             ManageTodos,
-            ImportTodos,
             ExportTodos,
             EmailTodos,
             Quit
@@ -31,6 +30,8 @@ namespace TodoAppConsole.Implementations
         public FileSaver FileSaver { get; private set; }
         public CategoryManager CategoryManager { get; private set; }
 
+        public EmailSender EmailSender { get; private set; }
+
         public ConsoleHandler()
         {
             Console.OutputEncoding = System.Text.Encoding.UTF8;
@@ -43,45 +44,22 @@ namespace TodoAppConsole.Implementations
 
             TaskManager = new TaskManager();
 
-            //TaskManager.saveData = FileSaver.loadFromFile(FileSaver.TodosFilePath);
-            //TaskManager.tasks = TaskManager.saveData.Tasks;
-            //TaskManager.nextId = TaskManager.saveData.nextId;
             TaskManager.tasks = FileSaver.TodosSaveData.Tasks;
             TaskManager.nextId = FileSaver.TodosSaveData.nextId;
 
             CategoryManager.categories = FileSaver.CategoriesSaveData.Categories;
             CategoryManager.nextId = FileSaver.CategoriesSaveData.nextId;
 
-            //TaskManager.addTask(
-            //    "First task",
-            //    "This is task 1 ka description",
-            //    new DateTime(2024, 12, 25),
-            //    new Category("Category 1"),
-            //    "High"
-            //);
-            //TaskManager.addTask(
-            //    "Second taskkkkkkkkkkkkkk",
-            //    "This is task 2",
-            //    new DateTime(2024, 11, 02),
-            //    new Category("Category 1"),
-            //    "Low"
-            //);
-            //TaskManager.addTask(
-            //    "Third task",
-            //    "Task 3 says hi!",
-            //    new DateTime(2024, 06, 30),
-            //    new Category("Category 2"),
-            //    "Medium"
-            //);
+            EmailSender = new EmailSender();
         }
 
         public void mainLoop()
         {
             while (_running)
             {
-                switch(_currentState)
+                switch (_currentState)
                 {
-                case AppState.MainMenu:
+                    case AppState.MainMenu:
                         mainMenu();
                         break;
                     case AppState.HelpMenu:
@@ -90,14 +68,11 @@ namespace TodoAppConsole.Implementations
                     case AppState.ManageTodos:
                         showTasks();
                         break;
-                    case AppState.ImportTodos:
-                        // Placeholder for ImportTodos logic
-                        break;
                     case AppState.ExportTodos:
-                        // Placeholder for ExportTodos logic
+                        exportTasksScreen();
                         break;
                     case AppState.EmailTodos:
-                        // Placeholder for EmailTodos logic
+                        showEmailSendingScreen();
                         break;
                     case AppState.Quit:
                         _running = false;
@@ -107,54 +82,6 @@ namespace TodoAppConsole.Implementations
                 }
                 //AnsiConsole.Clear();
             }
-        }
-
-        private int getUserTodoChoice(int cursorLeft, int cursorTop, Dictionary<string, string> inputs)
-        {
-            bool selected = false;
-            int option = 1;
-            int numOptions = inputs.Count;
-            Console.CursorVisible = false;
-
-            while (!selected)
-            {
-                Console.SetCursorPosition(cursorLeft, cursorTop);
-
-                int index = 1;
-                foreach (KeyValuePair<string, string> pair in inputs)
-                {
-                    Console.WriteLine($"{(index == option ? "\u001b[32m" : "")}{index}. {pair.Value} - {pair.Key}\u001B[0m");
-                    index++;
-                }
-
-                ConsoleKeyInfo key = Console.ReadKey(true);
-
-                if (key.Key == ConsoleKey.UpArrow)
-                {
-                    option = option == 1 ? numOptions : option - 1;
-                }
-                else if (key.Key == ConsoleKey.DownArrow)
-                {
-                    option = option == numOptions ? 1 : option + 1;
-                }
-                else if (key.Key == ConsoleKey.Enter)
-                {
-                    selected = true;
-                    break;
-                }
-            }
-
-            Console.CursorVisible = true;
-            return option - 1;
-        }
-
-        /// <summary>
-        /// @return
-        /// </summary>
-        public void displayHelp()
-        {
-            // TODO implement here
-            return;
         }
 
         /// <summary>
@@ -176,12 +103,10 @@ namespace TodoAppConsole.Implementations
             {
                 { 1, "Help" },
                 { 2, "Manage Todos" },
-                { 3, "Import Todos" },
-                { 4, "Export Todos" },
-                { 5, "Email Todos" },
-                { 6, "Quit" }
+                { 3, "Export Todos" },
+                { 4, "Email Todos" },
+                { 5, "Quit" }
             };
-            //int option = getUserChoice(Console.CursorLeft, Console.CursorTop, options);
             int option = AnsiConsole.Prompt(
                 new SelectionPrompt<int>()
                 .Title("Select an option:")
@@ -192,10 +117,19 @@ namespace TodoAppConsole.Implementations
 
             switch (option)
             {
+                case 1:
+                    _currentState = AppState.HelpMenu;
+                    break;
                 case 2:
                     _currentState = AppState.ManageTodos;
                     break;
-                case 6:
+                case 4:
+                    _currentState = AppState.EmailTodos;
+                    break;
+                case 3:
+                    _currentState = AppState.ExportTodos;
+                    break;
+                case 5:
                     _currentState = AppState.Quit;
                     break;
                 default:
@@ -204,7 +138,7 @@ namespace TodoAppConsole.Implementations
 
             AnsiConsole.Clear();
             return;
-            
+
         }
 
         private void InitializeLayout()
@@ -281,7 +215,7 @@ namespace TodoAppConsole.Implementations
                     {
                         todosTable.AddRow(
                             new Markup($"[{task.category.color}]{task.id}[/]"),
-                            new Markup($"[{task.category.color}]{ task.title }[/]"),
+                            new Markup($"[{task.category.color}]{task.title}[/]"),
                             new Markup($"[{task.category.color}]{task.category.name}[/]"),
                             new Markup($"[{task.category.color}]{task.dueDate.ToShortDateString()}[/]"),
                             new Markup($"[{task.category.color}]{task.priority}[/]"),
@@ -309,7 +243,7 @@ namespace TodoAppConsole.Implementations
             );
             }
 
-            
+
         }
 
         private void UpdateTodoInfoPanel()
@@ -323,11 +257,7 @@ namespace TodoAppConsole.Implementations
                     new Markup($"{TaskManager.tasks[_currentOption].description}")
                     );
                 _layout["TodoInfo"].Update(
-                //new Panel(
-                //Align.Left(
-                //        new Markup($"[bold green]Description[/]\n{TaskManager.tasks[_currentOption].description}"),
-                //        VerticalAlignment.Middle))
-                //    .Expand().Border(BoxBorder.Double).Header(new PanelHeader("[bold green]Todos[/] Info"))
+
                 new Panel(
                 Align.Left(
                         new Padder(new Panel(rows)).PadTop(1),
@@ -357,7 +287,7 @@ namespace TodoAppConsole.Implementations
                 InitializeLayout();
             }
 
-            
+
 
             // Render layout
             AnsiConsole.Clear();
@@ -390,8 +320,6 @@ namespace TodoAppConsole.Implementations
                     break;
                 case ConsoleKey.Enter:
                     TaskManager.toggeTaskCompletion(TaskManager.tasks[_currentOption].id, FileSaver);
-                    //FileSaver.saveToFile(TaskManager.saveData);
-                    //TaskManager.tasks[_currentOption].isCompleted = !TaskManager.tasks[_currentOption].isCompleted;
                     break;
                 case ConsoleKey.A:
                     addTaskForm();
@@ -440,9 +368,6 @@ namespace TodoAppConsole.Implementations
                     .UseConverter(c => $"ID: {c.id}, Name: {c.name}, Color: [{c.color}]{c.color}[/]")
                     .AddChoices(categories));
             AnsiConsole.Write(new Markup($"Category selected: [green]{category.name}[/]\n"));
-            //string category = AnsiConsole.Prompt(
-            //    new TextPrompt<string>("Enter Todo [green]Category[/]: ")
-            //);
 
             AnsiConsole.Write(new Rule("[yellow]Due Date[/]"));
             var currDate = DateTime.Today;
@@ -515,12 +440,6 @@ namespace TodoAppConsole.Implementations
                     .UseConverter(c => $"ID: {c.id}, Name: {c.name}, Color: [{c.color}]{c.color}[/]")
                     .AddChoices(categories));
             AnsiConsole.Write(new Markup($"Category selected: [green]{category.name}[/]\n"));
-            //string category = AnsiConsole.Prompt(
-            //    new TextPrompt<string>("Enter Todo [green]Category[/] [dim](Leave blank to keep unchanged)[/]: ")
-            //    .AllowEmpty()
-            //);
-            //if (string.IsNullOrEmpty(category))
-            //    category = task.category.name;
 
             AnsiConsole.Write(new Rule("[yellow]Due Date[/]"));
             var editDateConfirmation = AnsiConsole.Prompt(
@@ -555,13 +474,6 @@ namespace TodoAppConsole.Implementations
             );
 
             TaskManager.editTask(task.id, title, description, dueDate, category, priority, FileSaver);
-            //task.title = title;
-            //task.description = description;
-            //task.priority = priority;
-            //task.dueDate = dueDate;
-            //task.category.name = category;
-
-            //FileSaver.saveToFile(TaskManager.saveData);
 
             AnsiConsole.Write("[bold green]Task edited successfully![/]");
             Console.CursorVisible = false;
@@ -582,8 +494,6 @@ namespace TodoAppConsole.Implementations
                 return;
 
             TaskManager.removeTask(TaskManager.tasks[_currentOption].id, FileSaver);
-            //TaskManager.tasks.Remove(TaskManager.tasks[_currentOption]);
-            //FileSaver.saveToFile(TaskManager.saveData);
             _currentOption = 0;
 
             AnsiConsole.Write("[bold green]Task removed successfully![/]");
@@ -638,8 +548,8 @@ namespace TodoAppConsole.Implementations
 
             categoriesTable.AddColumns(["ID", "NAME", "COLOUR"]);
 
-            foreach (var category in CategoryManager.categories) 
-            { 
+            foreach (var category in CategoryManager.categories)
+            {
                 categoriesTable.AddRow(category.id.ToString(), category.name, category.color);
             }
 
@@ -747,22 +657,69 @@ namespace TodoAppConsole.Implementations
             AnsiConsole.Clear();
         }
 
-        /// <summary>
-        /// @return
-        /// </summary>
-        public void navigateToSettings()
+        public void displayHelp()
         {
-            // TODO implement here
+            Console.Clear();
+            AnsiConsole.Write(new Rule("[yellow]Help[/]"));
+            AnsiConsole.Write(new Markup("Navigate menus with arrow keys\n"));
+            AnsiConsole.Write(new Markup("Select with Enter key\n"));
+            AnsiConsole.Write(new Markup("Other Controls are given on the respective screen\n"));
+
+            AnsiConsole.Write(new Markup("[blue]Press any key to continue...[/]"));
+            var key = Console.ReadKey();
+
+            Console.Clear();
+            _currentState = AppState.MainMenu;
             return;
         }
 
-        /// <summary>
-        /// @return
-        /// </summary>
-        public void exitApplication()
+        public void showEmailSendingScreen()
         {
-            // TODO implement here
-            return;
+            Console.Clear();
+            Console.CursorVisible = true;
+
+            AnsiConsole.Write(new Rule("[yellow]Send Email[/]"));
+            var email = AnsiConsole.Prompt(
+                new TextPrompt<string>("Enter your [green]email:[/]"));
+            EmailSender.sendEmail(TaskManager.tasks, email);
+
+            AnsiConsole.Write(new Markup("[green]Email has been sent successfully![/]\n"));
+            AnsiConsole.Write(new Markup("[blue]Press any key to continue...[/]"));
+            var key = Console.ReadKey();
+
+            Console.CursorVisible = false;
+            Console.Clear();
+            _currentState = AppState.MainMenu;
+        }
+
+        public void exportTasksScreen()
+        {
+            Console.Clear();
+            Console.CursorVisible = true;
+
+            AnsiConsole.Write(new Rule("[yellow]Export Tasks[/]"));
+
+            var filePath = AnsiConsole.Prompt(
+                new TextPrompt<string>("Enter [green]file path:[/]"));
+            var fileName = AnsiConsole.Prompt(
+                new TextPrompt<string>("Enter [green]file name:[/]"));
+            
+            var status = FileSaver.ExportSaveData(TaskManager.tasks, filePath, fileName);
+            if (status)
+            {
+                AnsiConsole.Write(new Markup("[green]Tasks exported Successfully![/]"));
+            }
+            else
+            {
+                AnsiConsole.Write(new Markup("[red]Something went wrong[/]"));
+            }
+
+            AnsiConsole.Write(new Markup("[blue]Press any key to continue...[/]"));
+            var key = Console.ReadKey();
+
+            Console.CursorVisible = false;
+            Console.Clear();
+            _currentState = AppState.MainMenu;
         }
     }
 }

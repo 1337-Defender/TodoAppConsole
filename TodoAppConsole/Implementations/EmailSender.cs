@@ -17,10 +17,10 @@ namespace TodoAppConsole.Implementations
         /// @param email 
         /// @return
         /// </summary>
-        public void sendEmail(Task task, string email)
+        public bool sendEmail(List<Task> task, string email)
         {
-            // TODO implement here
-            return;
+            bool confirmation = true;
+            return confirmation;
         }
     }
 }

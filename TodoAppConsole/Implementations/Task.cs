@@ -21,17 +21,11 @@ namespace TodoAppConsole.Implementations
 
         public DateTime dueDate { get; set; }
 
-        public DateTime completionTimeStamp;
-
         public string priority { get; set; }
 
         public bool isCompleted { get; set; }
 
-        public bool isPinned;
-
         public Category category { get; set; }
-
-        public string taskGroup;
 
         /// <summary>
         /// @return
@@ -40,15 +34,6 @@ namespace TodoAppConsole.Implementations
         public void toggleCompletion()
         {
             isCompleted = !isCompleted;
-            // TODO implement here
-            return;
-        }
-
-        /// <summary>
-        /// @return
-        /// </summary>
-        public void pinTask()
-        {
             // TODO implement here
             return;
         }

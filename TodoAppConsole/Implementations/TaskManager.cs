@@ -13,7 +13,6 @@ namespace TodoAppConsole.Implementations
         {
             tasks = new List<Task>();
             nextId = 1;
-            //saveData = new SaveData();
         }
 
         public List<Task> tasks;
@@ -83,7 +82,6 @@ namespace TodoAppConsole.Implementations
                 var idx = tasks.FindIndex(t => t.id == id);
                 tasks.RemoveAt(idx);
 
-                //saveData.Tasks = tasks;
                 fileSaver.saveToFileTodos(tasks, nextId);
             }
             return;
@@ -96,59 +94,9 @@ namespace TodoAppConsole.Implementations
                 var task = tasks.Find(t => t.id == id);
                 task.toggleCompletion();
 
-                //saveData.Tasks = tasks;
                 fileSaver.saveToFileTodos(tasks, nextId);
             }
             return;
-        }
-
-        /// <summary>
-        /// @param taskId 
-        /// @return
-        /// </summary>
-        public Task getTask(int taskId)
-        {
-            // TODO implement here
-            return null;
-        }
-
-        /// <summary>
-        /// @return
-        /// </summary>
-        public List<Task> getAllTasks()
-        {
-            // TODO implement here
-            return null;
-        }
-
-        /// <summary>
-        /// @param attribute 
-        /// @return
-        /// </summary>
-        public List<Task> filterTasks(string attribute)
-        {
-            // TODO implement here
-            return null;
-        }
-
-        /// <summary>
-        /// @param keyword 
-        /// @return
-        /// </summary>
-        public List<Task> searchTasks(string keyword)
-        {
-            // TODO implement here
-            return null;
-        }
-
-        /// <summary>
-        /// @param attribute 
-        /// @return
-        /// </summary>
-        public List<Task> sortTasks(string attribute)
-        {
-            // TODO implement here
-            return null;
         }
     }
 }
