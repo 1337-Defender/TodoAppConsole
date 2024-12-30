@@ -43,9 +43,15 @@ namespace TodoAppConsole.Implementations
 
             TaskManager = new TaskManager();
 
-            TaskManager.saveData = FileSaver.loadFromFile(FileSaver.FilePath);
-            TaskManager.tasks = TaskManager.saveData.Tasks;
-            TaskManager.nextId = TaskManager.saveData.nextId;
+            //TaskManager.saveData = FileSaver.loadFromFile(FileSaver.TodosFilePath);
+            //TaskManager.tasks = TaskManager.saveData.Tasks;
+            //TaskManager.nextId = TaskManager.saveData.nextId;
+            TaskManager.tasks = FileSaver.TodosSaveData.Tasks;
+            TaskManager.nextId = FileSaver.TodosSaveData.nextId;
+
+            CategoryManager.categories = FileSaver.CategoriesSaveData.Categories;
+            CategoryManager.nextId = FileSaver.CategoriesSaveData.nextId;
+
             //TaskManager.addTask(
             //    "First task",
             //    "This is task 1 ka description",
@@ -310,11 +316,22 @@ namespace TodoAppConsole.Implementations
         {
             if (TaskManager.tasks.Count > 0)
             {
+                var rows = new Rows(
+                    new Rule("[lime]Title[/]").LeftJustified(),
+                    new Markup($"{TaskManager.tasks[_currentOption].title}"),
+                    new Rule("[lime]Description[/]").LeftJustified(),
+                    new Markup($"{TaskManager.tasks[_currentOption].description}")
+                    );
                 _layout["TodoInfo"].Update(
+                //new Panel(
+                //Align.Left(
+                //        new Markup($"[bold green]Description[/]\n{TaskManager.tasks[_currentOption].description}"),
+                //        VerticalAlignment.Middle))
+                //    .Expand().Border(BoxBorder.Double).Header(new PanelHeader("[bold green]Todos[/] Info"))
                 new Panel(
-                Align.Center(
-                        new Markup($"[bold green]Description[/]\n{TaskManager.tasks[_currentOption].description}"),
-                        VerticalAlignment.Middle))
+                Align.Left(
+                        new Padder(new Panel(rows)).PadTop(1),
+                        VerticalAlignment.Top))
                     .Expand().Border(BoxBorder.Double).Header(new PanelHeader("[bold green]Todos[/] Info"))
                 );
             }
@@ -325,7 +342,7 @@ namespace TodoAppConsole.Implementations
                 Align.Center(
                         new Markup("[bold red]No Todos Selected![/]"),
                         VerticalAlignment.Middle))
-                    .Expand().Border(BoxBorder.Double).Header(new PanelHeader("[bold green]Todos[/] Info"))
+                    .Expand().Border(BoxBorder.Double).Header(new PanelHeader("[bold lime]Todos[/] Info"))
                 );
             }
         }
@@ -372,8 +389,8 @@ namespace TodoAppConsole.Implementations
                     _currentState = AppState.MainMenu;
                     break;
                 case ConsoleKey.Enter:
-                    TaskManager.toggeTaskCompletion(TaskManager.tasks[_currentOption].id);
-                    FileSaver.saveToFile(TaskManager.saveData);
+                    TaskManager.toggeTaskCompletion(TaskManager.tasks[_currentOption].id, FileSaver);
+                    //FileSaver.saveToFile(TaskManager.saveData);
                     //TaskManager.tasks[_currentOption].isCompleted = !TaskManager.tasks[_currentOption].isCompleted;
                     break;
                 case ConsoleKey.A:
@@ -442,8 +459,8 @@ namespace TodoAppConsole.Implementations
                 .DefaultValue("Low")
             );
 
-            TaskManager.addTask(title, description, dueDate, new Category(category), priority);
-            FileSaver.saveToFile(TaskManager.saveData);
+            TaskManager.addTask(title, description, dueDate, new Category(1, category, "red"), priority, FileSaver);
+            //FileSaver.saveToFile(TaskManager.saveData);
 
             AnsiConsole.Write("[bold green]Task added successfully![/]");
             Console.CursorVisible = false;
@@ -521,14 +538,14 @@ namespace TodoAppConsole.Implementations
                 .DefaultValue(task.priority)
             );
 
-            TaskManager.editTask(task.id, title, description, dueDate, new Category(category), priority);
+            TaskManager.editTask(task.id, title, description, dueDate, new Category(1, category, "red"), priority, FileSaver);
             //task.title = title;
             //task.description = description;
             //task.priority = priority;
             //task.dueDate = dueDate;
             //task.category.name = category;
 
-            FileSaver.saveToFile(TaskManager.saveData);
+            //FileSaver.saveToFile(TaskManager.saveData);
 
             AnsiConsole.Write("[bold green]Task edited successfully![/]");
             Console.CursorVisible = false;
@@ -548,9 +565,9 @@ namespace TodoAppConsole.Implementations
             if (!confirmation)
                 return;
 
-            TaskManager.removeTask(TaskManager.tasks[_currentOption].id);
+            TaskManager.removeTask(TaskManager.tasks[_currentOption].id, FileSaver);
             //TaskManager.tasks.Remove(TaskManager.tasks[_currentOption]);
-            FileSaver.saveToFile(TaskManager.saveData);
+            //FileSaver.saveToFile(TaskManager.saveData);
             _currentOption = 0;
 
             AnsiConsole.Write("[bold green]Task removed successfully![/]");
@@ -580,6 +597,7 @@ namespace TodoAppConsole.Implementations
                 switch (choice)
                 {
                     case "View Categories":
+                        showCategoriesTable();
                         break;
                     case "Edit Category":
                         break;
@@ -593,7 +611,60 @@ namespace TodoAppConsole.Implementations
             }
         }
 
+        public void showCategoriesTable()
+        {
+            var categoriesTable = new Table();
 
+            categoriesTable.AddColumns(["ID", "NAME", "COLOUR"]);
+
+            foreach (var category in CategoryManager.categories) 
+            { 
+                categoriesTable.AddRow(category.id.ToString(), category.name, category.color);
+            }
+
+            AnsiConsole.Write(categoriesTable);
+        }
+
+        public void editCategoriesForm()
+        {
+            var categories = CategoryManager.categories;
+
+            var selectedCategory = AnsiConsole.Prompt(
+                new SelectionPrompt<Category>()
+                    .Title("[yellow]Select a category to edit:[/]")
+                    .UseConverter(c => $"ID: {c.id}, Name: {c.name}")
+                    .AddChoices(categories));
+
+            // Edit Name
+            AnsiConsole.Write(new Rule("[yellow]Name[/]"));
+            var newName = AnsiConsole.Prompt(
+                new TextPrompt<string>("[green]Enter the new name:[/] [dim](Leave blank to keep unchanged)[/]")
+                    .AllowEmpty());
+            if (string.IsNullOrEmpty(newName))
+                newName = selectedCategory.name;
+
+            // Edit Color
+            AnsiConsole.Write(new Rule("[yellow]Color[/]"));
+            var colors = new Dictionary<string, string>
+            {
+                { "Red", "[red]█[/]" },
+                { "Green", "[green]█[/]" },
+                { "Blue", "[blue]█[/]" },
+                { "Yellow", "[yellow]█[/]" },
+                { "Cyan", "[cyan]█[/]" },
+                { "Magenta", "[magenta]█[/]" },
+                { "White", "[white]█[/]" },
+                { "BrightGreen", "[lime]█[/]" }
+            };
+
+            var newColor = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title("[green]Select a new color:[/]")
+                    .AddChoices(colors.Keys)
+                    .UseConverter(color => $"{color} {colors[color]}"));
+
+            CategoryManager.editCategory(selectedCategory.id, newName, newColor);
+        }
 
         /// <summary>
         /// @return

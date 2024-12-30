@@ -13,13 +13,13 @@ namespace TodoAppConsole.Implementations
         {
             tasks = new List<Task>();
             nextId = 1;
-            saveData = new SaveData();
+            //saveData = new SaveData();
         }
 
         public List<Task> tasks;
 
         public CategoryManager categoryManager;
-        public SaveData saveData;
+        //public SaveData saveData;
         public int nextId;
 
         /// <summary>
@@ -30,7 +30,7 @@ namespace TodoAppConsole.Implementations
         /// @param priority 
         /// @return
         /// </summary>
-        public void addTask(string title, string description, DateTime dueDate, Category category, string priority)
+        public void addTask(string title, string description, DateTime dueDate, Category category, string priority, FileSaver fileSaver)
         {  
             var task = new Task();
             task.id = nextId++;
@@ -41,8 +41,7 @@ namespace TodoAppConsole.Implementations
             task.priority = priority;
             tasks.Add(task);
 
-            saveData.Tasks = tasks;
-            saveData.nextId = nextId;
+            fileSaver.saveToFileTodos(tasks, nextId);
             return;
         }
 
@@ -55,7 +54,7 @@ namespace TodoAppConsole.Implementations
         /// @param priority 
         /// @return
         /// </summary>
-        public void editTask(int id, string title, string description, DateTime dueDate, Category category, string priority)
+        public void editTask(int id, string title, string description, DateTime dueDate, Category category, string priority, FileSaver fileSaver)
         {
             if (id >= 0 && id <= nextId)
             {
@@ -66,7 +65,8 @@ namespace TodoAppConsole.Implementations
                 task.category = category;
                 task.priority = priority;
 
-                saveData.Tasks = tasks;
+                //saveData.Tasks = tasks;
+                fileSaver.saveToFileTodos(tasks, nextId);
             }
 
             return;
@@ -76,26 +76,28 @@ namespace TodoAppConsole.Implementations
         /// @param id 
         /// @return
         /// </summary>
-        public void removeTask(int id)
+        public void removeTask(int id, FileSaver fileSaver)
         {
             if (id >= 0 && id <= nextId) 
             {
                 var idx = tasks.FindIndex(t => t.id == id);
                 tasks.RemoveAt(idx);
 
-                saveData.Tasks = tasks;
+                //saveData.Tasks = tasks;
+                fileSaver.saveToFileTodos(tasks, nextId);
             }
             return;
         }
 
-        public void toggeTaskCompletion(int id)
+        public void toggeTaskCompletion(int id, FileSaver fileSaver)
         {
             if (id >= 0 && id <= nextId)
             {
                 var task = tasks.Find(t => t.id == id);
                 task.toggleCompletion();
 
-                saveData.Tasks = tasks;
+                //saveData.Tasks = tasks;
+                fileSaver.saveToFileTodos(tasks, nextId);
             }
             return;
         }

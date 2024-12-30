@@ -10,24 +10,46 @@ namespace TodoAppConsole.Implementations
 {
     public class FileSaver
     {
-        public static string FilePath = Path.Combine(
+        public TodosSaveData TodosSaveData { get; set; }
+        public static string TodosFilePath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData, Environment.SpecialFolderOption.Create), "TodoApp", "todos.json");
-        public FileSaver()
-        { 
-        }
 
-        public string dataDirectory;
+        public CategoriesSaveData CategoriesSaveData { get; set; }
+        public static string CategoriesFilePath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData, Environment.SpecialFolderOption.Create), "TodoApp", "categories.json");
+
+        public FileSaver()
+        {
+            TodosSaveData = new TodosSaveData();
+            TodosSaveData = loadFromFileTodos();
+
+            CategoriesSaveData = new CategoriesSaveData();
+            CategoriesSaveData = loadFromFileCategories();
+        }
 
         /// <summary>
         /// @param fileName 
         /// @return
         /// </summary>
-        public void saveToFile(SaveData saveData)
+        public void saveToFileTodos(List<Task> tasks, int nextId)
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(FilePath));
+            Directory.CreateDirectory(Path.GetDirectoryName(TodosFilePath));
 
-            var json = JsonSerializer.Serialize(saveData, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(FilePath, json);
+            TodosSaveData.Tasks = tasks;
+            TodosSaveData.nextId = nextId;
+            var json = JsonSerializer.Serialize(TodosSaveData, new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(TodosFilePath, json);
+            return;
+        }
+
+        public void saveToFileCategories(List<Category> categories, int nextId)
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(CategoriesFilePath));
+
+            CategoriesSaveData.Categories = categories;
+            CategoriesSaveData.nextId = nextId;
+            var json = JsonSerializer.Serialize(CategoriesSaveData, new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(TodosFilePath, json);
             return;
         }
 
@@ -35,12 +57,20 @@ namespace TodoAppConsole.Implementations
         /// @param fileName 
         /// @return
         /// </summary>
-        public static SaveData loadFromFile(string fileName)
+        public static TodosSaveData loadFromFileTodos()
         {
-            if (!File.Exists(FilePath)) return new SaveData();  // If no file exists, return an empty list
+            if (!File.Exists(TodosFilePath)) return new TodosSaveData();  // If no file exists, return an empty list
 
-            var json = File.ReadAllText(FilePath);
-            return JsonSerializer.Deserialize<SaveData>(json) ?? new SaveData();
+            var json = File.ReadAllText(TodosFilePath);
+            return JsonSerializer.Deserialize<TodosSaveData>(json) ?? new TodosSaveData();
+        }
+
+        public static CategoriesSaveData loadFromFileCategories()
+        {
+            if (!File.Exists(CategoriesFilePath)) return new CategoriesSaveData();  // If no file exists, return an empty list
+
+            var json = File.ReadAllText(TodosFilePath);
+            return JsonSerializer.Deserialize<CategoriesSaveData>(json) ?? new CategoriesSaveData();
         }
     }
 }

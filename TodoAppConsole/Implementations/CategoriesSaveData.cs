@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace TodoAppConsole.Implementations
 {
-    public class SaveData
+    public class CategoriesSaveData
     {
         public int nextId { get; set; } = 1;
-        public List<Task> Tasks { get; set; } = new List<Task>();
+        public List<Category> Categories { get; set; } = new List<Category>();
     }
 }

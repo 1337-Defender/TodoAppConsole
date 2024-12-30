@@ -8,8 +8,13 @@ namespace TodoAppConsole.Implementations
 {
     public class CategoryManager
     {
+        public List<Category> categories;
+        public int nextId;
+
         public CategoryManager()
         {
+            categories = new List<Category>();
+            nextId = 1;
         }
 
         /// <summary>
@@ -20,7 +25,8 @@ namespace TodoAppConsole.Implementations
         /// </summary>
         public void createCategory(int id, string name, string color)
         {
-            // TODO implement here
+            var category = new Category(id, name, color);
+            categories.Add(category);
             return;
         }
 
@@ -32,7 +38,9 @@ namespace TodoAppConsole.Implementations
         /// </summary>
         public void editCategory(int id, string name, string color)
         {
-            // TODO implement here
+            var category = categories.Find(c => c.id == id);
+            category.name = name;
+            category.color = color;
             return;
         }
 
@@ -41,7 +49,9 @@ namespace TodoAppConsole.Implementations
         /// </summary>
         public void deleteCategory(int id)
         {
-            // TODO implement here
+            var category = categories.Find(c => c.id == id);
+            categories.Remove(category);
+            
         }
     }
 }
