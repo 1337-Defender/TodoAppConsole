@@ -49,7 +49,7 @@ namespace TodoAppConsole.Implementations
             CategoriesSaveData.Categories = categories;
             CategoriesSaveData.nextId = nextId;
             var json = JsonSerializer.Serialize(CategoriesSaveData, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(TodosFilePath, json);
+            File.WriteAllText(CategoriesFilePath, json);
             return;
         }
 
@@ -67,10 +67,12 @@ namespace TodoAppConsole.Implementations
 
         public static CategoriesSaveData loadFromFileCategories()
         {
-            if (!File.Exists(CategoriesFilePath)) return new CategoriesSaveData();  // If no file exists, return an empty list
+            CategoriesSaveData data = new CategoriesSaveData();
+            data.Categories.Add(new Category(data.nextId++, "Default", "white"));
+            if (!File.Exists(CategoriesFilePath)) return data;  // If no file exists, return an empty list
 
-            var json = File.ReadAllText(TodosFilePath);
-            return JsonSerializer.Deserialize<CategoriesSaveData>(json) ?? new CategoriesSaveData();
+            var json = File.ReadAllText(CategoriesFilePath);
+            return JsonSerializer.Deserialize<CategoriesSaveData>(json) ?? data;
         }
     }
 }

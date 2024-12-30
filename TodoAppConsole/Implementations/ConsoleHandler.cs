@@ -269,22 +269,22 @@ namespace TodoAppConsole.Implementations
                     if (_currentOption == _)
                     {
                         todosTable.AddRow(
-                            new Markup($"[invert]{task.id}[/]"),
-                            new Markup($"[invert]{task.title}[/]"),
-                            new Markup($"[invert]{task.category.name}[/]"),
-                            new Markup($"[invert]{task.dueDate.ToShortDateString()}[/]"),
-                            new Markup($"[invert]{task.priority}[/]"),
+                            new Markup($"[{task.category.color} invert]{task.id}[/]"),
+                            new Markup($"[{task.category.color} invert]{task.title}[/]"),
+                            new Markup($"[{task.category.color} invert]{task.category.name}[/]"),
+                            new Markup($"[{task.category.color} invert]{task.dueDate.ToShortDateString()}[/]"),
+                            new Markup($"[{task.category.color} invert]{task.priority}[/]"),
                             (task.isCompleted ? new Markup(":check_mark_button:") : new Markup(":cross_mark:"))
                         );
                     }
                     else
                     {
                         todosTable.AddRow(
-                            new Markup($"{task.id}"),
-                            new Markup($"{ task.title }"),
-                            new Markup($"{task.category.name}"),
-                            new Markup($"{task.dueDate.ToShortDateString()}"),
-                            new Markup($"{task.priority}"),
+                            new Markup($"[{task.category.color}]{task.id}[/]"),
+                            new Markup($"[{task.category.color}]{ task.title }[/]"),
+                            new Markup($"[{task.category.color}]{task.category.name}[/]"),
+                            new Markup($"[{task.category.color}]{task.dueDate.ToShortDateString()}[/]"),
+                            new Markup($"[{task.category.color}]{task.priority}[/]"),
                             (task.isCompleted ? new Markup(":check_mark_button:") : new Markup(":cross_mark:"))
                         );
                     }
@@ -431,10 +431,18 @@ namespace TodoAppConsole.Implementations
                 new TextPrompt<string>("Enter Todo [green]Description[/]: ")
             );
 
-            AnsiConsole.Write(new Rule("[yellow]Description[/]"));
-            string category = AnsiConsole.Prompt(
-                new TextPrompt<string>("Enter Todo [green]Category[/]: ")
-            );
+            AnsiConsole.Write(new Rule("[yellow]Category[/]"));
+            var categories = CategoryManager.categories;
+
+            var category = AnsiConsole.Prompt(
+                new SelectionPrompt<Category>()
+                    .Title("Select a [green]category:[/]")
+                    .UseConverter(c => $"ID: {c.id}, Name: {c.name}, Color: [{c.color}]{c.color}[/]")
+                    .AddChoices(categories));
+            AnsiConsole.Write(new Markup($"Category selected: [green]{category.name}[/]\n"));
+            //string category = AnsiConsole.Prompt(
+            //    new TextPrompt<string>("Enter Todo [green]Category[/]: ")
+            //);
 
             AnsiConsole.Write(new Rule("[yellow]Due Date[/]"));
             var currDate = DateTime.Today;
@@ -459,7 +467,7 @@ namespace TodoAppConsole.Implementations
                 .DefaultValue("Low")
             );
 
-            TaskManager.addTask(title, description, dueDate, new Category(1, category, "red"), priority, FileSaver);
+            TaskManager.addTask(title, description, dueDate, category, priority, FileSaver);
             //FileSaver.saveToFile(TaskManager.saveData);
 
             AnsiConsole.Write("[bold green]Task added successfully![/]");
@@ -498,13 +506,21 @@ namespace TodoAppConsole.Implementations
                 description = task.description;
 
             AnsiConsole.Write(new Rule("[yellow]Category[/]"));
+            var categories = CategoryManager.categories;
+
             AnsiConsole.Write(new Markup($"[aqua]Current Category: [/][dim]{task.category.name}[/]\n"));
-            string category = AnsiConsole.Prompt(
-                new TextPrompt<string>("Enter Todo [green]Category[/] [dim](Leave blank to keep unchanged)[/]: ")
-                .AllowEmpty()
-            );
-            if (string.IsNullOrEmpty(category))
-                category = task.category.name;
+            var category = AnsiConsole.Prompt(
+                new SelectionPrompt<Category>()
+                    .Title("Select a [green]category:[/]")
+                    .UseConverter(c => $"ID: {c.id}, Name: {c.name}, Color: [{c.color}]{c.color}[/]")
+                    .AddChoices(categories));
+            AnsiConsole.Write(new Markup($"Category selected: [green]{category.name}[/]\n"));
+            //string category = AnsiConsole.Prompt(
+            //    new TextPrompt<string>("Enter Todo [green]Category[/] [dim](Leave blank to keep unchanged)[/]: ")
+            //    .AllowEmpty()
+            //);
+            //if (string.IsNullOrEmpty(category))
+            //    category = task.category.name;
 
             AnsiConsole.Write(new Rule("[yellow]Due Date[/]"));
             var editDateConfirmation = AnsiConsole.Prompt(
@@ -538,7 +554,7 @@ namespace TodoAppConsole.Implementations
                 .DefaultValue(task.priority)
             );
 
-            TaskManager.editTask(task.id, title, description, dueDate, new Category(1, category, "red"), priority, FileSaver);
+            TaskManager.editTask(task.id, title, description, dueDate, category, priority, FileSaver);
             //task.title = title;
             //task.description = description;
             //task.priority = priority;
@@ -589,9 +605,9 @@ namespace TodoAppConsole.Implementations
                 var choice = AnsiConsole.Prompt(
                 new SelectionPrompt<string>()
                     .Title("Select an [green]action[/]?")
-                    .PageSize(4)
+                    .PageSize(5)
                     .AddChoices(new[] {
-                        "View Categories", "Edit Category", "Remove Category", "Go back"
+                        "View Categories", "Add Category", "Edit Category", "Remove Category", "Go back"
                     }));
 
                 switch (choice)
@@ -599,9 +615,14 @@ namespace TodoAppConsole.Implementations
                     case "View Categories":
                         showCategoriesTable();
                         break;
+                    case "Add Category":
+                        addCategoriesForm();
+                        break;
                     case "Edit Category":
+                        editCategoriesForm();
                         break;
                     case "Remove Category":
+                        removeCategoriesForm();
                         break;
                     case "Go back":
                         Console.CursorVisible = false;
@@ -623,6 +644,37 @@ namespace TodoAppConsole.Implementations
             }
 
             AnsiConsole.Write(categoriesTable);
+        }
+
+        public void addCategoriesForm()
+        {
+            var categories = CategoryManager.categories;
+
+            AnsiConsole.Write(new Rule("[yellow]Name[/]"));
+            var name = AnsiConsole.Prompt(
+                new TextPrompt<string>("Enter the [green]name:[/]"));
+
+            AnsiConsole.Write(new Rule("[yellow]Color[/]"));
+            var colors = new Dictionary<string, string>
+            {
+                { "Red", "[red]█[/]" },
+                { "Green", "[green]█[/]" },
+                { "Blue", "[blue]█[/]" },
+                { "Yellow", "[yellow]█[/]" },
+                { "Cyan", "[cyan]█[/]" },
+                { "Magenta", "[magenta]█[/]" },
+                { "White", "[white]█[/]" },
+                { "BrightGreen", "[lime]█[/]" }
+            };
+
+            var color = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title("Select a [green]color:[/]")
+                    .AddChoices(colors.Keys)
+                    .UseConverter(color => $"{color} {colors[color]}"));
+
+            CategoryManager.createCategory(name, color.ToLower(), FileSaver);
+            AnsiConsole.Clear();
         }
 
         public void editCategoriesForm()
@@ -663,7 +715,36 @@ namespace TodoAppConsole.Implementations
                     .AddChoices(colors.Keys)
                     .UseConverter(color => $"{color} {colors[color]}"));
 
-            CategoryManager.editCategory(selectedCategory.id, newName, newColor);
+            CategoryManager.editCategory(selectedCategory.id, newName, newColor.ToLower(), FileSaver);
+            AnsiConsole.Clear();
+        }
+
+        public void removeCategoriesForm()
+        {
+            var categories = CategoryManager.categories;
+
+            var selectedCategory = AnsiConsole.Prompt(
+                new SelectionPrompt<Category>()
+                    .Title("[yellow]Select a form to edit:[/]")
+                    .UseConverter(c => $"ID: {c.id}, Name: {c.name}")
+                    .AddChoices(categories));
+
+            var confirmationPrompt = new ConfirmationPrompt("[red]Remove Task?[/]");
+            confirmationPrompt.DefaultValue = false;
+            var confirmation = AnsiConsole.Prompt(
+                confirmationPrompt
+            );
+
+            if (confirmation)
+            {
+                CategoryManager.deleteCategory(selectedCategory.id, FileSaver);
+                AnsiConsole.Write("Task deleted [green]successfully![/]");
+            }
+            else
+            {
+                AnsiConsole.Write("Task deletion cancelled!");
+            }
+            AnsiConsole.Clear();
         }
 
         /// <summary>

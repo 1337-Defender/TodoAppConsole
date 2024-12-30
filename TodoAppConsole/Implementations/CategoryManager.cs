@@ -23,10 +23,11 @@ namespace TodoAppConsole.Implementations
         /// @param color 
         /// @return
         /// </summary>
-        public void createCategory(int id, string name, string color)
+        public void createCategory(string name, string color, FileSaver fileSaver)
         {
-            var category = new Category(id, name, color);
+            var category = new Category(nextId++, name, color);
             categories.Add(category);
+            fileSaver.saveToFileCategories(categories, nextId);
             return;
         }
 
@@ -36,22 +37,23 @@ namespace TodoAppConsole.Implementations
         /// @param color 
         /// @return
         /// </summary>
-        public void editCategory(int id, string name, string color)
+        public void editCategory(int id, string name, string color, FileSaver fileSaver)
         {
             var category = categories.Find(c => c.id == id);
             category.name = name;
             category.color = color;
+            fileSaver.saveToFileCategories(categories, nextId);
             return;
         }
 
         /// <summary>
         /// @param id
         /// </summary>
-        public void deleteCategory(int id)
+        public void deleteCategory(int id, FileSaver fileSaver)
         {
             var category = categories.Find(c => c.id == id);
             categories.Remove(category);
-            
+            fileSaver.saveToFileCategories(categories, nextId);
         }
     }
 }
