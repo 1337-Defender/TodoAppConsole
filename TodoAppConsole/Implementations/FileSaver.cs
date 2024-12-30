@@ -10,7 +10,7 @@ namespace TodoAppConsole.Implementations
 {
     public class FileSaver
     {
-        private static string FilePath = Path.Combine(
+        public static string FilePath = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData, Environment.SpecialFolderOption.Create), "TodoApp", "todos.json");
         public FileSaver()
         { 
@@ -22,11 +22,11 @@ namespace TodoAppConsole.Implementations
         /// @param fileName 
         /// @return
         /// </summary>
-        public void saveToFile(List<Task> todos)
+        public void saveToFile(SaveData saveData)
         {
             Directory.CreateDirectory(Path.GetDirectoryName(FilePath));
 
-            var json = JsonSerializer.Serialize(todos, new JsonSerializerOptions { WriteIndented = true });
+            var json = JsonSerializer.Serialize(saveData, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(FilePath, json);
             return;
         }
@@ -35,12 +35,12 @@ namespace TodoAppConsole.Implementations
         /// @param fileName 
         /// @return
         /// </summary>
-        public static List<Task> loadFromFile(string fileName)
+        public static SaveData loadFromFile(string fileName)
         {
-            if (!File.Exists(FilePath)) return new List<Task>();  // If no file exists, return an empty list
+            if (!File.Exists(FilePath)) return new SaveData();  // If no file exists, return an empty list
 
             var json = File.ReadAllText(FilePath);
-            return JsonSerializer.Deserialize<List<Task>>(json);
+            return JsonSerializer.Deserialize<SaveData>(json) ?? new SaveData();
         }
     }
 }

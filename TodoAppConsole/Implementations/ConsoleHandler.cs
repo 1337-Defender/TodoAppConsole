@@ -29,6 +29,7 @@ namespace TodoAppConsole.Implementations
         private int _currentOption;
         public TaskManager TaskManager { get; private set; }
         public FileSaver FileSaver { get; private set; }
+        public CategoryManager CategoryManager { get; private set; }
 
         public ConsoleHandler()
         {
@@ -38,28 +39,34 @@ namespace TodoAppConsole.Implementations
 
             FileSaver = new FileSaver();
 
+            CategoryManager = new CategoryManager();
+
             TaskManager = new TaskManager();
-            TaskManager.addTask(
-                "First task",
-                "This is task 1 ka description",
-                new DateTime(2024, 12, 25),
-                new Category("Category 1"),
-                "High"
-            );
-            TaskManager.addTask(
-                "Second taskkkkkkkkkkkkkk",
-                "This is task 2",
-                new DateTime(2024, 11, 02),
-                new Category("Category 1"),
-                "Low"
-            );
-            TaskManager.addTask(
-                "Third task",
-                "Task 3 says hi!",
-                new DateTime(2024, 06, 30),
-                new Category("Category 2"),
-                "Medium"
-            );
+
+            TaskManager.saveData = FileSaver.loadFromFile(FileSaver.FilePath);
+            TaskManager.tasks = TaskManager.saveData.Tasks;
+            TaskManager.nextId = TaskManager.saveData.nextId;
+            //TaskManager.addTask(
+            //    "First task",
+            //    "This is task 1 ka description",
+            //    new DateTime(2024, 12, 25),
+            //    new Category("Category 1"),
+            //    "High"
+            //);
+            //TaskManager.addTask(
+            //    "Second taskkkkkkkkkkkkkk",
+            //    "This is task 2",
+            //    new DateTime(2024, 11, 02),
+            //    new Category("Category 1"),
+            //    "Low"
+            //);
+            //TaskManager.addTask(
+            //    "Third task",
+            //    "Task 3 says hi!",
+            //    new DateTime(2024, 06, 30),
+            //    new Category("Category 2"),
+            //    "Medium"
+            //);
         }
 
         public void mainLoop()
@@ -224,6 +231,7 @@ namespace TodoAppConsole.Implementations
             controlsTable.AddRow("Add todos", "[bold gray]a[/]");
             controlsTable.AddRow("Edit todos", "[bold gray]e[/]");
             controlsTable.AddRow("Remove todos", "[bold gray]r[/]");
+            controlsTable.AddRow("Manage Categories", "[bold gray]c[/]");
             controlsTable.AddRow("Exit", "[bold gray]Esc[/]");
 
             controlsTable.Columns[1].Centered();
@@ -364,7 +372,9 @@ namespace TodoAppConsole.Implementations
                     _currentState = AppState.MainMenu;
                     break;
                 case ConsoleKey.Enter:
-                    TaskManager.tasks[_currentOption].isCompleted = !TaskManager.tasks[_currentOption].isCompleted;
+                    TaskManager.toggeTaskCompletion(TaskManager.tasks[_currentOption].id);
+                    FileSaver.saveToFile(TaskManager.saveData);
+                    //TaskManager.tasks[_currentOption].isCompleted = !TaskManager.tasks[_currentOption].isCompleted;
                     break;
                 case ConsoleKey.A:
                     addTaskForm();
@@ -374,6 +384,9 @@ namespace TodoAppConsole.Implementations
                     break;
                 case ConsoleKey.R:
                     removeTaskForm();
+                    break;
+                case ConsoleKey.C:
+                    navigateToCategories();
                     break;
             }
             UpdateTodosPanel();
@@ -430,7 +443,7 @@ namespace TodoAppConsole.Implementations
             );
 
             TaskManager.addTask(title, description, dueDate, new Category(category), priority);
-            FileSaver.saveToFile(TaskManager.tasks);
+            FileSaver.saveToFile(TaskManager.saveData);
 
             AnsiConsole.Write("[bold green]Task added successfully![/]");
             Console.CursorVisible = false;
@@ -508,12 +521,15 @@ namespace TodoAppConsole.Implementations
                 .DefaultValue(task.priority)
             );
 
-            task.title = title;
-            task.description = description;
-            task.priority = priority;
-            task.dueDate = dueDate;
-            task.category.name = category;
-            
+            TaskManager.editTask(task.id, title, description, dueDate, new Category(category), priority);
+            //task.title = title;
+            //task.description = description;
+            //task.priority = priority;
+            //task.dueDate = dueDate;
+            //task.category.name = category;
+
+            FileSaver.saveToFile(TaskManager.saveData);
+
             AnsiConsole.Write("[bold green]Task edited successfully![/]");
             Console.CursorVisible = false;
         }
@@ -532,7 +548,11 @@ namespace TodoAppConsole.Implementations
             if (!confirmation)
                 return;
 
-            TaskManager.tasks.Remove(TaskManager.tasks[_currentOption]);
+            TaskManager.removeTask(TaskManager.tasks[_currentOption].id);
+            //TaskManager.tasks.Remove(TaskManager.tasks[_currentOption]);
+            FileSaver.saveToFile(TaskManager.saveData);
+            _currentOption = 0;
+
             AnsiConsole.Write("[bold green]Task removed successfully![/]");
             Console.CursorVisible = false;
         }
@@ -542,9 +562,38 @@ namespace TodoAppConsole.Implementations
         /// </summary>
         public void navigateToCategories()
         {
-            // TODO implement here
-            return;
+            AnsiConsole.Clear();
+            Console.CursorVisible = true;
+            AnsiConsole.Write(new Rule("[yellow]Categories[/]"));
+
+            bool _catRunning = true;
+            while (_catRunning)
+            {
+                var choice = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title("Select an [green]action[/]?")
+                    .PageSize(4)
+                    .AddChoices(new[] {
+                        "View Categories", "Edit Category", "Remove Category", "Go back"
+                    }));
+
+                switch (choice)
+                {
+                    case "View Categories":
+                        break;
+                    case "Edit Category":
+                        break;
+                    case "Remove Category":
+                        break;
+                    case "Go back":
+                        Console.CursorVisible = false;
+                        _catRunning = false;
+                        break;
+                }
+            }
         }
+
+
 
         /// <summary>
         /// @return

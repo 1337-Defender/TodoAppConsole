@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -11,11 +12,15 @@ namespace TodoAppConsole.Implementations
         public TaskManager()
         {
             tasks = new List<Task>();
+            nextId = 1;
+            saveData = new SaveData();
         }
 
         public List<Task> tasks;
 
         public CategoryManager categoryManager;
+        public SaveData saveData;
+        public int nextId;
 
         /// <summary>
         /// @param title 
@@ -28,12 +33,16 @@ namespace TodoAppConsole.Implementations
         public void addTask(string title, string description, DateTime dueDate, Category category, string priority)
         {  
             var task = new Task();
+            task.id = nextId++;
             task.title = title;
             task.description = description;
             task.dueDate = dueDate;
             task.category = category;
             task.priority = priority;
             tasks.Add(task);
+
+            saveData.Tasks = tasks;
+            saveData.nextId = nextId;
             return;
         }
 
@@ -48,7 +57,18 @@ namespace TodoAppConsole.Implementations
         /// </summary>
         public void editTask(int id, string title, string description, DateTime dueDate, Category category, string priority)
         {
-            // TODO implement here
+            if (id >= 0 && id <= nextId)
+            {
+                var task = tasks.Find(t => t.id == id);
+                task.title = title;
+                task.description = description;
+                task.dueDate = dueDate;
+                task.category = category;
+                task.priority = priority;
+
+                saveData.Tasks = tasks;
+            }
+
             return;
         }
 
@@ -58,7 +78,25 @@ namespace TodoAppConsole.Implementations
         /// </summary>
         public void removeTask(int id)
         {
-            // TODO implement here
+            if (id >= 0 && id <= nextId) 
+            {
+                var idx = tasks.FindIndex(t => t.id == id);
+                tasks.RemoveAt(idx);
+
+                saveData.Tasks = tasks;
+            }
+            return;
+        }
+
+        public void toggeTaskCompletion(int id)
+        {
+            if (id >= 0 && id <= nextId)
+            {
+                var task = tasks.Find(t => t.id == id);
+                task.toggleCompletion();
+
+                saveData.Tasks = tasks;
+            }
             return;
         }
 

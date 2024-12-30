@@ -13,7 +13,7 @@ namespace TodoAppConsole.Implementations
             isCompleted = false;
         }
 
-        public int id;
+        public int id { get; set; }
 
         public string title { get; set; }
 
@@ -37,9 +37,9 @@ namespace TodoAppConsole.Implementations
         /// @return
         /// </summary>
 
-        public void markAsCompleted()
+        public void toggleCompletion()
         {
-            isCompleted = true;
+            isCompleted = !isCompleted;
             // TODO implement here
             return;
         }
